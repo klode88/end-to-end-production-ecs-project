@@ -1,1 +1,0 @@
-# end-to-end-production-ecs-project

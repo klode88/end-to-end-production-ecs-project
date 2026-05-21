@@ -2,9 +2,9 @@
 
 FROM golang:alpine AS builder
 WORKDIR /app
-COPY go.mod go.sum ./
+COPY app/go.mod app/go.sum ./
 RUN go mod download
-COPY . .
+COPY app/. .
 RUN CGO_ENABLED=0 GOOS=linux go build -o gatus .
 
 # stage 2 : run the app
@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o gatus .
 FROM alpine:latest
 RUN adduser -D appuser
 COPY --from=builder /app/gatus /app/gatus
-COPY config.yaml /app/config.yaml
+COPY app/config.yaml /app/config.yaml
 ENV GATUS_CONFIG_PATH=/app/config.yaml
 ENV PORT=8080
 EXPOSE 8080

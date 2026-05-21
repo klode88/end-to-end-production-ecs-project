@@ -29,9 +29,8 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        working-directory: ./gatus
         run: |
-          docker build -f Dockerfile.project -t $ECR_REPOSITORY:${{ github.sha }} .
+          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
 
       - name: Tag Docker image for ECR
         run: |

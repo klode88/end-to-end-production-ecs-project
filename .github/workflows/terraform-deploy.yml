@@ -40,5 +40,5 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
-      - run: terraform plan -input=false -var-file="terraform.tfvars"
+      - run: terraform plan -input=false 
         working-directory: ./infra

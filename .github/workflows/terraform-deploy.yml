@@ -94,7 +94,8 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
-      - run: terraform plan -input=false 
-        working-directory: ./infra
-        name: Terraform apply
+      -      - name: Terraform plan
+        run: terraform plan -input=false
+
+      - name: Terraform apply
         run: terraform apply -auto-approve -input=false

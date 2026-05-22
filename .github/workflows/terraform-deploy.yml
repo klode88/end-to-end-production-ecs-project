@@ -96,3 +96,5 @@ jobs:
 
       - run: terraform plan -input=false 
         working-directory: ./infra
+        name: Terraform apply
+        run: terraform apply -auto-approve -input=false

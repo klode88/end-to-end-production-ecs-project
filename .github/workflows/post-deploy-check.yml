@@ -1,0 +1,13 @@
+name: Post Deploy Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check application health endpoint
+        run: |
+          curl -f https://tm.khaled-projects.net/health

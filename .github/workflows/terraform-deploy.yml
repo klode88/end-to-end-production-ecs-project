@@ -94,7 +94,7 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
-      -      - name: Terraform plan
+      - - name: Terraform plan
         run: terraform plan -input=false
 
       - name: Terraform apply

@@ -8,7 +8,9 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: eu-west-1  TF_VAR_vpc_cidr: "10.0.0.0/16"
+  env:
+  AWS_REGION: eu-west-1
+  TF_VAR_vpc_cidr: "10.0.0.0/16"
   TF_VAR_public_subnet_1_cidr: "10.0.0.0/24"
   TF_VAR_public_subnet_2_cidr: "10.0.2.0/24"
   TF_VAR_availability_zone_1: "eu-west-1a"

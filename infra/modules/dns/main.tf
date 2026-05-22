@@ -9,8 +9,8 @@ module "dns" {
 
   route53_validation_ttl = var.route53_validation_ttl
 
-  app_domain_name       = var.app_domain_name
-  app_record_type       = var.app_record_type
+  app_domain_name        = var.app_domain_name
+  app_record_type        = var.app_record_type
   evaluate_target_health = var.evaluate_target_health
 
   alb_dns_name = module.alb.alb_dns_name

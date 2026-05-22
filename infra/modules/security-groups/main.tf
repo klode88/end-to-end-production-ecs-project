@@ -1,7 +1,7 @@
 resource "aws_security_group" "alb_sg" {
-  name = " alb-sg"
+  name        = " alb-sg"
   description = "allow http and https from internet"
- vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = var.http_port
@@ -28,7 +28,7 @@ resource "aws_security_group" "alb_sg" {
 resource "aws_security_group" "ecs_sg" {
   name        = "ecs_sg"
   description = "allow traffic only from alb"
- vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = var.container_port

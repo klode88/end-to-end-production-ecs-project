@@ -61,6 +61,7 @@ env:
   TF_VAR_igw_name: "ecs-igw"
   TF_VAR_public_route_table_name: "ecs-public-aws_route_table"
   TF_VAR_public_route_cidr: "0.0.0.0/0"
+  TF_VAR_image_tag: "bc433161"
 
 
 jobs:

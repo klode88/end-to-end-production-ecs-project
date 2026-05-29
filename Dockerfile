@@ -9,7 +9,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o gatus .
 
 # stage 2 : run the app
 
-
 FROM alpine:latest
 RUN adduser -D appuser
 COPY --from=builder /app/gatus /app/gatus

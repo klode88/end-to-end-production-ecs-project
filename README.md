@@ -8,7 +8,7 @@ The goal was to build the infrastructure using Terraform, containerise the appli
 
 ## Architecture
 
-[Architecture Diagram Here]
+ add Diagram when done 
 
 ## Technologies Used
 

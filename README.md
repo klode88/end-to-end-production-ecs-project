@@ -31,15 +31,23 @@ The goal was to build the infrastructure using Terraform, containerise the appli
 - Git
 - Bash
 
-## Project Flow
+## Project Flow ## System Workflow
 
-Application
-→ Docker
-→ ECR
-→ ECS Fargate
-→ ALB
-→ HTTPS
-→ GitHub Actions CI/CD
+User visits https://tm.khaled-projects.net
+
+Route 53 points the domain to the Application Load Balancer.
+
+The ALB handles HTTPS traffic using the ACM certificate.
+
+The ALB forwards traffic to the ECS target group.
+
+The ECS service runs the Docker container on Fargate.
+
+The container image is stored in Amazon ECR.
+
+GitHub Actions builds and pushes new Docker images, then Terraform deploys the infrastructure changes.
+
+After deployment, a health check pipeline tests the live application endpoint.
 
 ## Infrastructure
 

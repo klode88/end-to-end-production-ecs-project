@@ -28,7 +28,7 @@ resource "aws_iam_role" "github_actions" {
           }
 
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:khaledziraoui/ecs-terraform:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:klode88/end-to-end-production-ecs-project:ref:refs/heads/main"
           }
         }
       }
@@ -48,7 +48,12 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Effect = "Allow"
 
         Action = [
-          "ecr:GetAuthorizationToken"
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart"
         ]
 
         Resource = "*"
@@ -57,15 +62,32 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Effect = "Allow"
 
         Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:CompleteLayerUpload",
-          "ecr:InitiateLayerUpload",
-          "ecr:PutImage",
-          "ecr:UploadLayerPart",
-          "ecr:BatchGetImage"
+          "acm:*",
+          "route53:*",
+          "ecr:*",
+          "ecs:*",
+          "iam:GetRole",
+          "iam:ListRolePolicies",
+          "iam:CreateRole",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetRolePolicy",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PassRole",
+          "iam:GetOpenIDConnectProvider",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "logs:*",
+          "ec2:*",
+          "elasticloadbalancing:*",
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
         ]
 
-        Resource = aws_ecr_repository.gatus.arn
+        Resource = "*"
       }
     ]
   })

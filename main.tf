@@ -1,316 +1,101 @@
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+module "vpc" {
+  source = "./infra/modules/vpc"
 
-  tags = {
-    Name = "ecs-vpc2"
-  }
-}
-resource "aws_subnet" "public_1" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.0.0/24"
-  availability_zone       = "eu-west-1a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "ecs-public-subnet-1"
-
-  }
-
-}
-resource "aws_subnet" "public_2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "eu-west-1b"
-
-  map_public_ip_on_launch = true
-  tags = {
-    Name = "ecs-public-subnet-2"
-
-  }
-}
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-  tags = {
-    Name = " ecs-igw"
-  }
-
-}
-resource "aws_route_table" "public" {
-
-
-
-  vpc_id = aws_vpc.main.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-
-  }
-  tags = {
-    Name = "ecs-public-aws_route_table"
-  }
+  vpc_cidr                = var.vpc_cidr
+  public_subnet_1_cidr    = var.public_subnet_1_cidr
+  public_subnet_2_cidr    = var.public_subnet_2_cidr
+  availability_zone_1     = var.availability_zone_1
+  availability_zone_2     = var.availability_zone_2
+  vpc_name                = var.vpc_name
+  public_subnet_1_name    = var.public_subnet_1_name
+  public_subnet_2_name    = var.public_subnet_2_name
+  igw_name                = var.igw_name
+  public_route_cidr       = var.public_route_cidr
+  public_route_table_name = var.public_route_table_name
 }
 
-resource "aws_route_table_association" "public_1" {
-  subnet_id      = aws_subnet.public_1.id
-  route_table_id = aws_route_table.public.id
+module "security_groups" {
+  source = "./infra/modules/security-groups"
 
-}
-resource "aws_route_table_association" "public_2" {
-  subnet_id      = aws_subnet.public_2.id
-  route_table_id = aws_route_table.public.id
-}
-resource "aws_security_group" "alb_sg" {
-  name        = " alb-sg"
-  description = "allow http and https from internet"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  vpc_id         = module.vpc.vpc_id
+  http_port      = var.http_port
+  https_port     = var.https_port
+  container_port = var.container_port
 }
 
-resource "aws_security_group" "ecs_sg" {
-  name        = "ecs_sg"
-  description = "allow traffic only from alb"
-  vpc_id      = aws_vpc.main.id
+module "ecr" {
+  source = "./infra/modules/ecr"
 
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
-
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
+  ecr_repo_name = var.ecr_repo_name
 }
 
-resource "aws_ecr_repository" "gatus" {
-  name = "gatus"
+module "dns" {
+  source = "./infra/modules/dns"
 
-}
-resource "aws_ecs_cluster" "main" {
-  name = "gatus-cluster"
+  acm_domain_name        = var.acm_domain_name
+  acm_validation_method  = var.acm_validation_method
+  environment            = var.environment
+  route53_zone_id        = var.route53_zone_id
+  route53_validation_ttl = var.route53_validation_ttl
 
-  tags = {
-    name = "gatus-cluster"
+  app_domain_name        = var.app_domain_name
+  app_record_type        = var.app_record_type
+  evaluate_target_health = var.evaluate_target_health
 
-  }
-}
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "gatus-ecs-task-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-
-    Statement = [
-      {
-        Effect = "Allow"
-
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
+  alb_dns_name = module.alb.alb_dns_name
+  alb_zone_id  = module.alb.alb_zone_id
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+module "alb" {
+  source = "./infra/modules/alb"
+
+  alb_name              = var.alb_name
+  alb_internal          = var.alb_internal
+  alb_type              = var.alb_type
+  alb_security_group_id = module.security_groups.alb_sg_id
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  vpc_id                = module.vpc.vpc_id
+
+  target_group_name     = var.target_group_name
+  target_group_port     = var.target_group_port
+  target_group_protocol = var.target_group_protocol
+  target_group_type     = var.target_group_type
+  health_check_path     = var.health_check_path
+  health_check_matcher  = var.health_check_matcher
+
+  http_listener_port     = var.http_listener_port
+  http_listener_protocol = var.http_listener_protocol
+  redirect_port          = var.redirect_port
+  redirect_protocol      = var.redirect_protocol
+  redirect_status_code   = var.redirect_status_code
+
+  certificate_arn = module.dns.certificate_arn
 }
 
-resource "aws_cloudwatch_log_group" "gatus" {
-  name              = "/ecs/gatus"
-  retention_in_days = 14
-}
+module "ecs" {
+  source = "./infra/modules/ecs"
 
-resource "aws_ecs_task_definition" "gatus" {
-  family                   = "gatus-task"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  ecs_cluster_name              = var.ecs_cluster_name
+  ecs_task_execution_role_name  = var.ecs_task_execution_role_name
+  ecs_task_execution_policy_arn = var.ecs_task_execution_policy_arn
 
-  container_definitions = jsonencode([
-    {
-      name      = "gatus"
-      image     = "${aws_ecr_repository.gatus.repository_url}:bc433161"
-      essential = true
+  cloudwatch_log_group_name = var.cloudwatch_log_group_name
+  cloudwatch_retention_days = var.cloudwatch_retention_days
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+  ecs_task_family     = var.ecs_task_family
+  ecs_cpu             = var.ecs_cpu
+  ecs_memory          = var.ecs_memory
+  container_name      = var.container_name
+  container_port      = var.container_port
+  container_image_tag = var.container_image_tag
+  aws_region          = var.aws_region
 
-      logConfiguration = {
-        logDriver = "awslogs"
+  ecs_service_name  = var.ecs_service_name
+  ecs_desired_count = var.ecs_desired_count
+  ecs_launch_type   = var.ecs_launch_type
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.gatus.name
-          awslogs-region        = "eu-west-1"
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
-
-resource "aws_lb" "gatus" {
-  name               = "gatus-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
-  subnets = [
-    aws_subnet.public_1.id,
-    aws_subnet.public_2.id
-  ]
-}
-
-resource "aws_lb_target_group" "gatus" {
-  name        = "gatus-tg"
-  port        = 8080
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = aws_vpc.main.id
-
-  health_check {
-    path    = "/health"
-    matcher = "200"
-  }
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.gatus.arn
-  port              = 80
-  protocol          = "HTTP"
-
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
-
-resource "aws_ecs_service" "gatus" {
-  name            = "gatus-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.gatus.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets = [
-      aws_subnet.public_1.id,
-      aws_subnet.public_2.id
-    ]
-
-    security_groups  = [aws_security_group.ecs_sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.gatus.arn
-    container_name   = "gatus"
-    container_port   = 8080
-  }
-
-  depends_on = [aws_lb_listener.http]
-}
-
-resource "aws_acm_certificate" "cert" {
-  domain_name       = "tm.khaled-projects.net"
-  validation_method = "DNS"
-
-  tags = {
-    Environment = "test"
-  }
-  lifecycle {
-    create_before_destroy = true
-
-  }
-}
-data "aws_route53_zone" "main" {
-  zone_id = "Z01106103VTZ4ZOEEI6L"
-}
-
-
-resource "aws_route53_record" "cert_validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
-
-  allow_overwrite = true
-  name            = each.value.name
-  records         = [each.value.record]
-  ttl             = 60
-  type            = each.value.type
-  zone_id         = data.aws_route53_zone.main.zone_id
-}
-resource "aws_acm_certificate_validation" "cert" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
-}
-
-resource "aws_route53_record" "app" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "tm.khaled-projects.net"
-  type    = "A"
-
-  alias {
-    name                   = aws_lb.gatus.dns_name
-    zone_id                = aws_lb.gatus.zone_id
-    evaluate_target_health = true
-  }
-}
-
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.gatus.arn
-  port              = 443
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate_validation.cert.certificate_arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.gatus.arn
-  }
+  ecr_repository_url = module.ecr.repository_url
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  ecs_sg_id          = module.security_groups.ecs_sg_id
+  target_group_arn   = module.alb.target_group_arn
 }

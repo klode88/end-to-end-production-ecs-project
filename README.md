@@ -8,7 +8,8 @@ The goal was to build the infrastructure using Terraform, containerise the appli
 
 ## Architecture
 
-<img width="43635" height="19650" alt="Blank diagram" src="https://github.com/user-attachments/assets/1b2d8fb4-0c76-4e25-a42b-c55ec34efd90" />
+<img width="1920" height="1440" alt="image" src="https://github.com/user-attachments/assets/24bf761e-651c-46c1-b514-7a9b80e15ead" />
+
 
 
 ## Technologies Used
